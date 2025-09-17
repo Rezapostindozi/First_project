@@ -5,12 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Repositories\UserRepositoryInterface;
+
 
 class UserController extends Controller
 {
+    protected $userRepo;
+
+    public function __construct(UserRepositoryInterface $userRepo)
+    {
+        $this->userRepo = $userRepo;
+    }
     public function index(){
 
-        return response()->json(User::all(), 200);
+        $users = $this->userRepo->all();
+        return response()->json($users , 200);
 
     }
     public function store(Request $request){
@@ -26,20 +35,19 @@ class UserController extends Controller
             'avatar_url' => 'nullable|url',
             'is_active' => 'boolean',
         ]);
-        $validated['password'] = bcrypt($validated['password']);
+        $id = $this->userRepo->create($validated);
+        $user = $this->userRepo->find($id);
 
 
-        $user = User::create($validated);
         return response()->json([
             'message'=> 'user created successfully',
             'user' => $user,
-        ],200 );
+        ],201 );
 
     }
 
     public function show($id){
-        $user = User::find($id);
-
+        $user = $this->userRepo->find($id);
         if(!$user){
             return response()->json(['message' => 'user not found'], 404);
         }
@@ -48,8 +56,7 @@ class UserController extends Controller
     }
 
     public function update(Request $request, $id){
-        $user =User::find($id);
-
+        $user = $this->userRepo->find($id);
         if(!$user){
             return response()->json(['message' => 'user not found'], 404);
 
@@ -65,14 +72,12 @@ class UserController extends Controller
             'avatar_url' => 'nullable|url',
             'is_active' => 'boolean',
         ]);
+        $updated = $this->userRepo->update($validated, $id);
+        if(!$updated){
+            return response()->json(['message' => 'user not found'], 404);
+        }
+        $user = $this->userRepo->find($id);
 
-        if(!empty(($validated['password']))){
-        $validated = ['password' => bcrypt($validated['password'])];
-        }
-        else{
-            unset($validated['password']);
-        }
-        $user->update($validated);
 
         return response()->json([
             'message'=> 'user updated successfully',
@@ -83,12 +88,11 @@ class UserController extends Controller
 
     public function destroy($id){
 
-        $user = User::find($id);
-
+        $user = $this->userRepo->find($id);
         if(!$user){
             return response()->json(['message' => 'user not found'], 404);
         }
-        $user->delete();
+        $this->userRepo->delete($id);
 
         return response()->json(['message' => 'user deleted successfully'], 200);
 
