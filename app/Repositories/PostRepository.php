@@ -4,7 +4,7 @@ namespace App\Repositories;
 
 use Illuminate\Support\Facades\DB;
 
-class PostRepository implements PostRepositoryInterface
+class PostRepository
 {
     protected $table = 'posts';
 
@@ -23,7 +23,7 @@ class PostRepository implements PostRepositoryInterface
         return DB::table($this->table)->insertGetId($data);
     }
 
-    public function update($id, array $data)
+    public function update( array $data , $id)
     {
         return DB::table($this->table)->where('id', $id)->update($data);
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Repositories\UserRepositoryInterface;
@@ -14,9 +15,9 @@ class UserController extends Controller
 {
     protected $userRepo;
 
-    public function __construct(UserRepositoryInterface $userRepo)
+    public function __construct()
     {
-        $this->userRepo = $userRepo;
+        $this->userRepo = new UserRepository(); ;
     }
     public function index(){
 

@@ -14,9 +14,9 @@ class PostController extends Controller
 
     protected $postRepo;
 
-    public function __construct(PostRepositoryInterface $postRepo)
+    public function __construct()
     {
-        $this->postRepo = $postRepo;
+        $this->postRepo = new PostRepository();
     }
     public function index(){
         $prepage = 10;
