@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Repositories\UserRepositoryInterface;
-
+use App\Enums\HttpStatus;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 
 class UserController extends Controller
 {
@@ -18,24 +20,14 @@ class UserController extends Controller
     }
     public function index(){
 
-        $users = $this->userRepo->all();
-        return response()->json($users , 200);
+        $prepage = 10;
+        $users = $this->userRepo->paginate($prepage);
+        return response()->json($users , HttpStatus::OK->value);
 
     }
-    public function store(Request $request){
+    public function store(StoreUserRequest $request){
 
-        $validated = $request->validate([
-            'username' => 'required|string|unique:users',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'contery' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'phone' => 'nullable|string',
-            'password' => 'required|string',
-            'bio' => 'nullable|string',
-            'avatar_url' => 'nullable|url',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
         $id = $this->userRepo->create($validated);
         $user = $this->userRepo->find($id);
 
@@ -43,40 +35,29 @@ class UserController extends Controller
         return response()->json([
             'message'=> 'user created successfully',
             'user' => $user,
-        ],201 );
+        ],HttpStatus::CREATED->value );
 
     }
 
     public function show($id){
         $user = $this->userRepo->find($id);
         if(!$user){
-            return response()->json(['message' => 'user not found'], 404);
+            return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
         }
 
         return response()->json($user);
     }
 
-    public function update(Request $request, $id){
+    public function update(UpdateUserRequest $request, $id){
         $user = $this->userRepo->find($id);
         if(!$user){
-            return response()->json(['message' => 'user not found'], 404);
+            return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
 
         }
-        $validated = $request->validate([
-            'username' => 'required|string|unique:users',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'country' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'phone' => 'nullable|string',
-            'password' => 'required|string',
-            'bio' => 'nullable|string',
-            'avatar_url' => 'nullable|url',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
         $updated = $this->userRepo->update($validated, $id);
         if(!$updated){
-            return response()->json(['message' => 'user not found'], 404);
+            return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
         }
         $user = $this->userRepo->find($id);
 
@@ -84,6 +65,7 @@ class UserController extends Controller
         return response()->json([
             'message'=> 'user updated successfully',
             'date'=> $user,
+            HttpStatus::OK->value,
         ]);
 
     }
@@ -92,11 +74,11 @@ class UserController extends Controller
 
         $user = $this->userRepo->find($id);
         if(!$user){
-            return response()->json(['message' => 'user not found'], 404);
+            return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
         }
         $this->userRepo->delete($id);
 
-        return response()->json(['message' => 'user deleted successfully'], 200);
+        return response()->json(['message' => 'user deleted successfully'], HttpStatus::OK->value);
 
 
     }
