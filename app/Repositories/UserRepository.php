@@ -5,9 +5,15 @@ namespace App\Repositories;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
-class UserRepository implements UserRepositoryInterface
+class UserRepository
 {
     protected $table = 'users';
+
+
+    public function paginate ($perPage = 10)
+    {
+        return DB::table($this->table)->paginate($perPage);
+    }
 
     public function all()
     {
@@ -22,7 +28,7 @@ class UserRepository implements UserRepositoryInterface
         if (isset($data['password'])) {
             $data['password'] = bcrypt($data['password']);
         }
-        return DB::table($this->table)->insert($data);
+        return DB::table($this->table)->insertGetId($data);
     }
     public function update(array $data, $id){
 

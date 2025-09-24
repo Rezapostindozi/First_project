@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\UserRepository;
+use App\Services\Loggerservice;
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Repositories\UserRepositoryInterface;
 use App\Enums\HttpStatus;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -21,16 +21,17 @@ class UserController extends Controller
     }
     public function index(){
 
-        $prepage = 10;
-        $users = $this->userRepo->paginate($prepage);
+        $users = $this->userRepo->paginate();
         return response()->json($users , HttpStatus::OK->value);
 
     }
     public function store(StoreUserRequest $request){
 
+
         $validated = $request->validated();
         $id = $this->userRepo->create($validated);
         $user = $this->userRepo->find($id);
+        Loggerservice::getLogger()->log("user created successfully");
 
 
         return response()->json([

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\HttpStatus;
+use App\Services\Loggerservice;
 use Illuminate\Console\Command;
 use App\Models\User;
 
@@ -26,6 +27,7 @@ class FillUserCountries extends Command
 
         foreach($users as $user){
             $user->Country = $Countries[array_rand($Countries)];
+            Loggerservice::getLogger()->log("user added successfully");
             $user->save();
 
         }
