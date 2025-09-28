@@ -17,24 +17,29 @@ class FillUserCountries extends Command
 
     public function handle()
     {
-        $Countries = ['iran','indian','england'];
-        $users = User::all();
+        $Countries = ['iran', 'indian', 'england'];
+        $users = User::where(function ($query) {
+            $query->whereNull('country')
+                  ->orWhere('country', '');
+        })->get();
 
-        if($users->isEmpty()){
-            $this->info('no user found' );
+
+
+
+        if ($users->isEmpty()) {
+            $this->info('no user found');
             return Command::SUCCESS;
         }
 
-        foreach($users as $user){
-            $user->Country = $Countries[array_rand($Countries)];
+        foreach ($users as $user) {
+            $user->country = $Countries[array_rand($Countries)];
             Loggerservice::getLogger()->log("user added successfully");
             $user->save();
 
         }
 
-        $this->info('Users added successfully');
+        $this->info('countries added successfully');
         return Command::SUCCESS;
-
 
 
     }

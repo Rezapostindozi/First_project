@@ -2,62 +2,60 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\HttpStatus;
 use App\Http\Controllers\Controller;
-use App\Repositories\CommentRepositoryInterface;
+use App\Http\Requests\StoreCommentRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Repositories\CommentRepository;
+use app\Services\Loggerservice;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
     protected $commentRepo;
 
-    public function __construct(CommentRepositoryInterface $commentRepo)
+    public function __construct()
     {
-        $this->commentRepo = $commentRepo;
+        $this->commentRepo = new CommentRepository();
     }
 
     public function index()
     {
-        $comments = $this->commentRepo->all();
+        $comments = $this->commentRepo->paginate();
         return response()->json($comments);
+
     }
 
     public function show($id)
     {
         $comment = $this->commentRepo->find($id);
         if (!$comment) {
-            return response()->json(['message' => 'Comment not found'], 404);
+            Loggerservice::getLogger()->log("Comment Not Found");
+            return response()->json(['message' => 'Comment not found'],HttpStatus::NOT_FOUND->value);
         }
         return response()->json($comment);
     }
-    public function store(Request $request)
+    public function store(StoreCommentRequest $request)
     {
-        $data = $request->validate([
-            'content' => 'required|string',
-            'parent_id' => 'nullable|exists:comments,id',
-            'approved_at' => 'nullable|date',
-        ]);
-
+        $data = $request->validated();
         $data['user_id'] = auth()->id();
-
         $data['post_id'] = $request->route('post_id');
 
         $comment = $this->commentRepo->create($data);
-        return response()->json($comment, 201);
+        Loggerservice::getLogger()->log("Comment Created Successfully");
+        return response()->json($comment, HttpStatus::CREATED->value);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePostRequest $request, $id)
     {
-        $data = $request->validate([
-            'content' => 'sometimes|string',
-            'approved_at' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         $updated = $this->commentRepo->update($id, $data);
 
         if (!$updated) {
-            return response()->json(['message' => 'Comment not found or update failed'], 404);
+            return response()->json(['message' => 'Comment not found or update failed'], HttpStatus::NOT_FOUND->value);
         }
-
+        Loggerservice::getLogger()->log("Comment Updated Successfully");
         return response()->json(['message' => 'Comment updated successfully']);
     }
 
@@ -66,9 +64,9 @@ class CommentController extends Controller
         $deleted = $this->commentRepo->delete($id);
 
         if (!$deleted) {
-            return response()->json(['message' => 'Comment not found or delete failed'], 404);
+            return response()->json(['message' => 'Comment not found or delete failed'], HttpStatus::NOT_FOUND->value);
         }
-
+        Loggerservice::getLogger()->log("Comment Deleted successfully");
         return response()->json(['message' => 'Comment deleted successfully']);
     }
 }

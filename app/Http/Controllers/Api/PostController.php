@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Enums\HttpStatus;
+use App\Services\Loggerservice;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
@@ -9,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Repositories\PostRepository;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
+
 class PostController extends Controller
 {
 
@@ -18,35 +21,44 @@ class PostController extends Controller
     {
         $this->postRepo = new PostRepository();
     }
-    public function index(){
-        $prepage = 10;
-        $posts = $this->postRepo->Paginate($prepage);
-        return response()->json($posts , HttpStatus::OK->value);
-    }
-    public function store(Request $request){
 
-        $validated = $request->validate();
+    public function index()
+    {
+
+        $posts = $this->postRepo->paginate();
+        return response()->json($posts, HttpStatus::OK->value);
+    }
+
+    public function store(StorePostRequest $request)
+    {
+
+        $validated = $request->validated();
         $validated['slug'] = Str::slug($validated['title']);
-        $id =$this->postRepo->create($validated);
-        $post =$this->postRepo->find($id);
+        $id = $this->postRepo->create($validated);
+        $post = $this->postRepo->find($id);
+        Loggerservice::getLogger()->log("Created post Successfully $id");
+
         return response()->json([
-            'message'=> 'post created successfully',
+            'message' => 'post created successfully',
             'post' => $post,
-        ],HttpStatus::CREATED->value);
+        ], HttpStatus::CREATED->value);
 
     }
-    public function show($id){
+
+    public function show($id)
+    {
         $post = $this->postRepo->find($id);
 
-        if(!$post){
-            return response()->json(['message'=> 'post not found',],HttpStatus::NOT_FOUND->value);
+        if (!$post) {
+            return response()->json(['message' => 'post not found',], HttpStatus::NOT_FOUND->value);
         }
         return response()->json($post);
 
     }
-    public function update(Request $request, $id)
+
+    public function update(UpdatePostRequest $request, $id)
     {
-        $validated = $request->validate();
+        $validated = $request->validated();
 
         $post = $this->postRepo->find($id);
 
@@ -61,6 +73,8 @@ class PostController extends Controller
         $this->postRepo->update($id, $validated);
 
         $post = $this->postRepo->find($id);
+        Loggerservice::getLogger()->log("Update post Successfully $id");
+
 
         return response()->json([
             'message' => 'post updated successfully',
@@ -69,15 +83,17 @@ class PostController extends Controller
         ]);
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
 
         $post = $this->postRepo->find($id);
 
-        if(!$post){
-            return response()->json(['message'=> 'post not found'],HttpStatus::NOT_FOUND->value);
+        if (!$post) {
+            return response()->json(['message' => 'post not found'], HttpStatus::NOT_FOUND->value);
         }
+        Loggerservice::getLogger()->log("Deleted post Successfully $id");
         $this->postRepo->delete($id);
-        return response()->json(['message'=> 'post deleted successfully'], HttpStatus::NO_CONTENT->value);
+        return response()->json(['message' => 'post deleted successfully'], HttpStatus::NO_CONTENT->value);
     }
 
 }

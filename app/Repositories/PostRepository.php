@@ -2,11 +2,19 @@
 
 namespace App\Repositories;
 
+use App\Models\Post;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PostRepository
 {
     protected $table = 'posts';
+
+
+    public function paginate($prepage = 10)
+    {
+        return DB::table($this->table)->paginate($prepage);
+    }
 
     public function all()
     {
@@ -20,6 +28,7 @@ class PostRepository
 
     public function create(array $data)
     {
+        $data['user_id'] = 3;
         return DB::table($this->table)->insertGetId($data);
     }
 

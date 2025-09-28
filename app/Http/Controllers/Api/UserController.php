@@ -31,7 +31,7 @@ class UserController extends Controller
         $validated = $request->validated();
         $id = $this->userRepo->create($validated);
         $user = $this->userRepo->find($id);
-        Loggerservice::getLogger()->log("user created successfully");
+        Loggerservice::getLogger()->log("User Created Successfully");
 
 
         return response()->json([
@@ -53,8 +53,8 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, $id){
         $user = $this->userRepo->find($id);
         if(!$user){
-            return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
-
+            Loggerservice::getLogger()->log("User Not Found");
+            return response()->json(['message' => 'User Not Found'], HttpStatus::NOT_FOUND->value );
         }
         $validated = $request->validated();
         $updated = $this->userRepo->update($validated, $id);
@@ -63,9 +63,10 @@ class UserController extends Controller
         }
         $user = $this->userRepo->find($id);
 
+        Loggerservice::getLogger()->log("User Updated Successfully");
 
         return response()->json([
-            'message'=> 'user updated successfully',
+            'message'=> 'User Updated Successfully',
             'date'=> $user,
             HttpStatus::OK->value,
         ]);
@@ -79,7 +80,7 @@ class UserController extends Controller
             return response()->json(['message' => 'user not found'], HttpStatus::NOT_FOUND->value );
         }
         $this->userRepo->delete($id);
-
+        Loggerservice::getLogger()->log("User Deleted Successfully");
         return response()->json(['message' => 'user deleted successfully'], HttpStatus::OK->value);
 
 

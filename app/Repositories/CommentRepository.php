@@ -3,39 +3,39 @@
 namespace App\Repositories;
 
 use App\Models\Comment;
+use function Laravel\Prompts\table;
+use Illuminate\Support\Facades\DB;
 
-class CommentRepository implements CommentRepositoryInterface
+class CommentRepository
 {
+
+    protected $table = 'comments';
+    public  function  paginate($prepage = 10)
+    {
+        return DB::table($this->table)->paginate($prepage);
+    }
     public function all()
     {
-        return Comment::all();
+        return DB::table($this->table)->get();
     }
 
     public function find($id)
     {
-        return Comment::find($id);
+        return DB::table($this->table)->where("id", $id)->first();
     }
 
-    public function create(array $data): Comment
+    public function create(array $data)
     {
-        return Comment::create($data);
+        return DB::table($this->table)->insertGetId($data);
     }
 
     public function update($id, array $data): bool
     {
-        $comment = $this->find($id);
-        if ($comment) {
-            return $comment->update($data);
-        }
-        return false;
+        return DB::table($this->table)->where("id", $id)->update($data);
     }
 
     public function delete($id): bool
     {
-        $comment = $this->find($id);
-        if ($comment) {
-            return $comment->delete();
-        }
-        return false;
+        return DB::table($this->table)->where("id", $id)->delete();
     }
 }

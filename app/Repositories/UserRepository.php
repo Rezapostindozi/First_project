@@ -12,7 +12,7 @@ class UserRepository
 
     public function paginate ($perPage = 10)
     {
-        return DB::table($this->table)->paginate($perPage);
+        return DB::table($this->table)->Paginate($perPage);
     }
 
     public function all()
