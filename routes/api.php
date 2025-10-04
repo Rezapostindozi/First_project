@@ -33,5 +33,7 @@ Route::put('/posts/{id}',[ PostController::class, 'update']);
 Route::delete('/posts/{id}',[ PostController::class, 'destroy']);
 
 
+
+
 //Route::apiResource('users', UserController::class);
 //Route::apiResource('posts', PostController::class);

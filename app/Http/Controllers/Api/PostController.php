@@ -36,7 +36,7 @@ class PostController extends Controller
         $validated['slug'] = Str::slug($validated['title']);
         $id = $this->postRepo->create($validated);
         $post = $this->postRepo->find($id);
-        Loggerservice::getLogger()->log("Created post Successfully $id");
+        LoggerService::getLogger()->log("Created post Successfully $id");
 
         return response()->json([
             'message' => 'post created successfully',
@@ -73,7 +73,7 @@ class PostController extends Controller
         $this->postRepo->update($id, $validated);
 
         $post = $this->postRepo->find($id);
-        Loggerservice::getLogger()->log("Update post Successfully $id");
+        LoggerService::getLogger()->log("Update post Successfully $id");
 
 
         return response()->json([
@@ -91,7 +91,7 @@ class PostController extends Controller
         if (!$post) {
             return response()->json(['message' => 'post not found'], HttpStatus::NOT_FOUND->value);
         }
-        Loggerservice::getLogger()->log("Deleted post Successfully $id");
+        LoggerService::getLogger()->log("Deleted post Successfully $id");
         $this->postRepo->delete($id);
         return response()->json(['message' => 'post deleted successfully'], HttpStatus::NO_CONTENT->value);
     }

@@ -6,8 +6,8 @@ namespace app\Services;
 class LoggerService
 
 {
-    private static ?Loggerservice $MyLogger = null;
-//  myloger = null or = new Loggerservice
+    private static ?LoggerService $myLogger = null;
+//  myloger = null or = new LoggerService
     private string $routeLogger;
 
 //  path for log file
@@ -17,10 +17,10 @@ class LoggerService
     }
 
 //    route logger path
-    public static function getLogger(): Loggerservice
+    public static function getLogger(): LoggerService
     {
-        if (self::$MyLogger == null) {
-            self::$MyLogger = new Loggerservice();
+        if (self::$myLogger == null) {
+            self::$myLogger = new LoggerService();
         }
 
         return self::$MyLogger;

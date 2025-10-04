@@ -17,7 +17,7 @@ class FillUserCountries extends Command
 
     public function handle()
     {
-        $Countries = ['iran', 'indian', 'england'];
+        $countries = ['iran', 'indian', 'england'];
         $users = User::where(function ($query) {
             $query->whereNull('country')
                   ->orWhere('country', '');
@@ -32,8 +32,8 @@ class FillUserCountries extends Command
         }
 
         foreach ($users as $user) {
-            $user->country = $Countries[array_rand($Countries)];
-            Loggerservice::getLogger()->log("user added successfully");
+            $user->country = $countries[array_rand($countries)];
+            LoggerService::getLogger()->log("user added successfully");
             $user->save();
 
         }
