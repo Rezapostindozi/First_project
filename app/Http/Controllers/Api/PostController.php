@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\HttpStatus;
-use App\Services\Loggerservice;
+use App\Services\LoggerService;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\Post;

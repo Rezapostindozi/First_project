@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\HttpStatus;
-use App\Services\Loggerservice;
+use App\Services\LoggerService;
 use Illuminate\Console\Command;
 use App\Models\User;
 
@@ -18,24 +18,25 @@ class FillUserCountries extends Command
     public function handle()
     {
         $countries = ['iran', 'indian', 'england'];
+        $found = false;
+
         $users = User::where(function ($query) {
             $query->whereNull('country')
-                  ->orWhere('country', '');
-        })->get();
+                ->orWhere('country', '');
+        })->chunk(100, function ($users) use ($countries , &$found) {
+            $found = true;
+            foreach ($users as $user) {
 
+                $user->country = $countries[array_rand($countries)];
+                $user->save();
 
+                LoggerService::getLogger()->log("User ID {$user->id} updated with country: {$user->country}");
+            }
+        });
 
-
-        if ($users->isEmpty()) {
+        if (!$found) {
             $this->info('no user found');
             return Command::SUCCESS;
-        }
-
-        foreach ($users as $user) {
-            $user->country = $countries[array_rand($countries)];
-            LoggerService::getLogger()->log("user added successfully");
-            $user->save();
-
         }
 
         $this->info('countries added successfully');

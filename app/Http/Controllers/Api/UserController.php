@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\UserRepository;
-use App\Services\Loggerservice;
+use App\Services\LoggerService;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Enums\HttpStatus;
