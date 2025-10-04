@@ -23,7 +23,7 @@ class LoggerService
             self::$myLogger = new LoggerService();
         }
 
-        return self::$MyLogger;
+        return self::$myLogger;
     }
 
     public function log(string $message)

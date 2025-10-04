@@ -12,12 +12,13 @@ class PostRepository
     protected $table = 'posts';
 
 
-    public function paginate($prepage = 10  ,$page =1)
+    public function paginate($perPage = 10  ,$page =1)
     {
-        $cacheKey = "posts.paginate.page.{$page}.prepage.{$prepage}";
+        $cacheKey = "posts.paginate.page_{$page}.perpage_{$perPage}";
+        $TTL = 10 ;
 
-        return Cache::remember($cacheKey, 6000, function () use ($prepage, $page) {
-            return DB::table($this->table)->paginate($prepage);
+        return Cache::remember($cacheKey, $TTL , function () use ($perPage, $page) {
+            return DB::table($this->table)->paginate($perPage, ['*'], 'page', $page);
 
         });
     }
@@ -25,8 +26,9 @@ class PostRepository
     public function all()
     {
         $cacheKey = 'posts.all';
+        $TTL = 10 ;
 
-        return Cache::remember($cacheKey , 600 , function() {
+        return Cache::remember($cacheKey , $TTL  , function() {
             return DB::table($this->table)->get();
         });
     }
@@ -34,7 +36,9 @@ class PostRepository
     public function find($id)
     {
         $cacheKey= "posts.{$id}";
-        return Cache::remember($cacheKey , 600, function () use ($id){
+        $TTL = 10 ;
+
+        return Cache::remember($cacheKey , $TTL , function () use ($id){
             return DB::table($this->table)->where('id', $id)->first();
 
         });
@@ -44,9 +48,20 @@ class PostRepository
     {
         $data['user_id'] = 3;
         $id = DB::table($this->table)->insertGetId($data);
+
         Cache::forget("posts.all");
+
+        for ($page = 1; $page <= 10; $page++) {
+            Cache::forget("posts.paginate.page_{$page}.perPage_10");
+        }
+
+        $post = DB::table($this->table)->where("id", $id)->first();
+
+        Cache::put("posts.{$id}", $post, now()->addMinutes(10));
+
         return $id;
     }
+
 
     public function update( array $data , $id)
     {
