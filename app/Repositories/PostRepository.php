@@ -14,10 +14,10 @@ class PostRepository
 
     public function paginate($perPage = 10  ,$page =1)
     {
-        $cacheKey = "posts.paginate.page_{$page}.perpage_{$perPage}";
+        $cacheKey = "posts.paginate.page_{$page}.perPage_{$perPage}";
         $TTL = 10 ;
 
-        return Cache::remember($cacheKey, $TTL , function () use ($perPage, $page) {
+        return Cache::tags(['posts'])->remember($cacheKey, $TTL , function () use ($perPage, $page) {
             return DB::table($this->table)->paginate($perPage, ['*'], 'page', $page);
 
         });
@@ -28,7 +28,7 @@ class PostRepository
         $cacheKey = 'posts.all';
         $TTL = 10 ;
 
-        return Cache::remember($cacheKey , $TTL  , function() {
+        return Cache::tags(['posts'])->remember($cacheKey , $TTL  , function() {
             return DB::table($this->table)->get();
         });
     }
@@ -38,7 +38,7 @@ class PostRepository
         $cacheKey= "posts.{$id}";
         $TTL = 10 ;
 
-        return Cache::remember($cacheKey , $TTL , function () use ($id){
+        return Cache::tags(['posts', "post_{$id}"])->remember($cacheKey , $TTL , function () use ($id){
             return DB::table($this->table)->where('id', $id)->first();
 
         });
@@ -49,15 +49,11 @@ class PostRepository
         $data['user_id'] = 3;
         $id = DB::table($this->table)->insertGetId($data);
 
-        Cache::forget("posts.all");
-
-        for ($page = 1; $page <= 10; $page++) {
-            Cache::forget("posts.paginate.page_{$page}.perPage_10");
-        }
+        Cache::tags(["posts"])->flush();
 
         $post = DB::table($this->table)->where("id", $id)->first();
 
-        Cache::put("posts.{$id}", $post, now()->addMinutes(10));
+        Cache::tags(["posts" , "post_{$id}"])->put("post_{$id}", $post , now()->addMinutes(10));
 
         return $id;
     }
@@ -68,8 +64,8 @@ class PostRepository
         $updated = DB::table($this->table)->where('id', $id)->update($data);
 
         if($updated){
-            Cache::forget("posts.all");
-            Cache::forget("posts.{$id}");
+            Cache::tags(["posts_{$id}"])->flush();
+            Cache::tags(["posts"])->flush();
         }
         return $updated;
     }
@@ -78,8 +74,9 @@ class PostRepository
     {
        $deleted = DB::table($this->table)->where('id', $id)->delete();
        if($deleted){
-           Cache::forget("posts.all");
-           Cache::forget("posts.{$id}");
+
+           Cache::tags(["posts_{$id}"])->flush();
+           Cache::tags(["posts"])->flush();
        }
        return $deleted;
     }

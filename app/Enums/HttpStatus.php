@@ -15,5 +15,5 @@ enum HttpStatus: int
     case FORBIDDEN  = 403;
     case NOT_FOUND  = 404;
     case MOVED_PERMANENTLY = 500;
-
+    case UNPROCESSABLE_ENTITY = 405;
 }

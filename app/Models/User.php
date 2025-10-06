@@ -6,10 +6,12 @@ use App\Http\Middleware\Authenticate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
+
 
     use HasFactory;
     protected $fillable = [
@@ -29,4 +31,12 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
     ];
     public $timestamps = true;
+
+
+    public function getJWTIdentifier(){
+        return $this->getKey();
+    }
+    public function getJWTCustomClaims(){
+        return ['secret_token'];
+    }
 }
