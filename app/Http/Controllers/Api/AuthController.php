@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\HttpStatus;
 use App\Http\Controllers\Controller;
-use app\Services\LoggerService;
+use App\Models\Register;
+use App\Services\LoggerService;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -34,25 +35,35 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
+
         return response()->json([
             'message' => 'Register successfully',
             'user' => $user,
             'token' => $token
         ],HttpStatus::CREATED->value);
     }
-    public function login (Request $request){
-
+    public function login(Request $request)
+    {
         $login = $request->only(['email', 'password']);
-        if (!$token = Auth::guard('api')->attempt($login)) {
 
-            return response()->json(['error' => 'invalid username or password'], HttpStatus::UNAUTHORIZED->value);
+        if (!$token = Auth::guard('api')->attempt($login)) {
+            return response()->json(['error' => 'Invalid username or password'], HttpStatus::UNAUTHORIZED->value);
         }
+
+        $user = auth()->user();
+
+        Register::where('user_id', $user->id)->delete();
+
+        Register::updateOrCreate(
+            ['user_id' => $user->id],
+            ['token' => $token]
+        );
+
         return response()->json([
             'message' => 'Login successfully',
-            'token' => $token,
-            'user'  => auth()->user()
+            'token'   => $token,
+            'user'    => $user,
         ]);
-
     }
 
     public function me (){
@@ -60,10 +71,22 @@ class AuthController extends Controller
         return response()->json(auth()->user());
     }
 
-    public function logout(){
-
-        auth()->logout();
-        return response()->json(['message' => 'Successfully logged out']);
+    public function logout()
+    {
+        try {
+            $token = JWTAuth::getToken();
+            JWTAuth::invalidate($token);
+            Register::where('token', $token)->delete();
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to logout, token invalid'], 400);
+        }
     }
-    //
+
+    public function show()
+    {
+        $users = User::whereIn('id', Register::pluck('user_id'))->get();
+        return response()->json(['active_users' => $users]);
+    }
+
 }

@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\LikeController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,11 +37,16 @@ Route::delete('/posts/{id}',[ PostController::class, 'destroy']);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/login', [AuthController::class, 'show']);
 
 Route::get('/me', [AuthController::class, 'me']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
 
+Route::middleware('auth:api')->group(function () {
+    Route::post('/posts/{post}/like', [LikeController::class, 'like']);
+    Route::post('/posts/{post}/dislike', [LikeController::class, 'dislike']);
+});
 
 //Route::apiResource('users', UserController::class);
 //Route::apiResource('posts', PostController::class);
