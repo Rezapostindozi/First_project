@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\HttpStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Like;
@@ -17,7 +18,7 @@ class LikeController extends Controller
         $userId = auth('api')->id();
 
         if (!$userId) {
-            return response()->json(['message' => 'User not authenticated'], 403);
+            return response()->json(['message' => 'User not authenticated'], Httpstatus::BAD_REQUEST->value);
         }
 
         $rateKey = "like-limit:{$userId}";
@@ -25,7 +26,7 @@ class LikeController extends Controller
             $seconds = RateLimiter::availableIn($rateKey);
             return response()->json([
                 'message' => "Rate limit exceeded. Try again in {$seconds} seconds."
-            ], 429);
+            ], Httpstatus::BAD_REQUEST->value);
         }
         RateLimiter::hit($rateKey, 60);
 
@@ -103,7 +104,8 @@ class LikeController extends Controller
 
     public function popular(): JsonResponse
     {
-        $popularPosts = Cache::tags(['posts'])->remember('popular_posts', 60, function () {
+        $TTl = now()->addMinutes(10);
+        $popularPosts = Cache::tags(['posts'])->remember('popular_posts', $TTl, function () {
             return Post::withCount(['likes' => function ($query) {
                 $query->where('like_status', 'like');
             }])
