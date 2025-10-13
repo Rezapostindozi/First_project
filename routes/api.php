@@ -53,22 +53,6 @@ Route::middleware('auth:api')->group(function () {
 });
 
 
-Route::get('/test-email', function () {
-    $user = User::first();
-
-    $liker = User::find(2);
-    $post = Post::first();
-
-    if (!$user || !$liker || !$post) {
-        return response()->json(['message' => 'User or Post not found'], 404);
-    }
-
-    $user->notify(new PostLikedNotification($liker, $post));
-
-    return response()->json(['message' => 'Test email sent']);
-});
-
-
 Route::middleware('auth:api')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread', [NotificationController::class, 'unread']);
