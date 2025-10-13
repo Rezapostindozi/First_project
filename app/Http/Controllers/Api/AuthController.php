@@ -2,91 +2,64 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\HttpStatus;
 use App\Http\Controllers\Controller;
-use App\Models\Register;
-use App\Services\LoggerService;
-use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
+use App\Services\AuthService;
+use App\Enums\HttpStatus;
+use Illuminate\Http\JsonResponse;
 class AuthController extends Controller
 {
+    protected $authService;
 
-    public function register (Request $request)
+    public function __construct(AuthService $authService)
     {
-        $validator = Validator::make(request()->all(), [
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6'
-        ]);
-        if ($validator->fails()) {
-            return response()->json(['errors' =>$validator->errors(), HttpStatus::UNPROCESSABLE_ENTITY]);
-        }
-        $user = User::create([
-            'username' => request('username'),
-            'first_name' => request('first_name'),
-            'last_name' => request('last_name'),
-            'email' => request('email'),
-            'password' => bcrypt(request('password')),
-        ]);
-
-        $token = JWTAuth::fromUser($user);
-
-
-        return response()->json([
-            'message' => 'Register successfully',
-            'user' => $user,
-            'token' => $token
-        ],HttpStatus::CREATED->value);
-    }
-    public function login(Request $request)
-    {
-        $login = $request->only(['email', 'password']);
-
-        if (!$token = Auth::guard('api')->attempt($login)) {
-            return response()->json(['error' => 'Invalid username or password'], HttpStatus::UNAUTHORIZED->value);
-        }
-
-        $user = auth()->user();
-
-        Register::where('user_id', $user->id)->delete();
-
-        Register::updateOrCreate(
-            ['user_id' => $user->id],
-            ['token' => $token]
-        );
-
-        return response()->json([
-            'message' => 'Login successfully',
-            'token'   => $token,
-            'user'    => $user,
-        ]);
+        $this->authService = $authService;
     }
 
-    public function me (){
+    public function register(RegisterRequest $request)
+    {
+        $result = $this->authService->register($request->validated());
+        return response()->json([
+            'message' => 'User successfully registered',
+            'user' => $result['user'],
+            'token' => $result['token']
+        ] , HttpStatus::CREATED->value);
 
-        return response()->json(auth()->user());
+    }
+    public function login(LoginRequest $request)
+    {
+        $result = $this->authService->login($request->validated());
+
+        if(!$result){
+            return response()->json([
+                'errors' => 'invalid username or password',
+            ] , HttpStatus::FORBIDDEN->value);
+        }
+        return response()->json([
+            'message' => 'User successfully logged in',
+            'user' => $result['user'],
+            'token' => $result['token']
+        ] , HttpStatus::OK->value);
     }
 
     public function logout()
     {
-        try {
-            $token = JWTAuth::getToken();
-            JWTAuth::invalidate($token);
-            Register::where('token', $token)->delete();
-            return response()->json(['message' => 'Successfully logged out']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to logout, token invalid'], 400);
-        }
+        $this->authService->logout();
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ]);
+    }
+    public function me()
+    {
+        return response()->json([
+            'active_user' => $this->authService->showActiveUser()
+        ]);
     }
 
-    public function show()
-    {
-        $users = User::whereIn('id', Register::pluck('user_id'))->get();
-        return response()->json(['active_users' => $users]);
-    }
+
+
+
+
 
 }

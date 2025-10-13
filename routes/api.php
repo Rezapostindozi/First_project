@@ -1,9 +1,13 @@
 <?php
-
 use App\Http\Controllers\Api\UserController;
+
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LikeController;
+use App\Notifications\PostLikedNotification;
+use App\Http\Controllers\Api\NotificationController;
+use App\Models\User;
+use App\Models\Post;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +50,30 @@ Route::post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:api')->group(function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'like']);
     Route::post('/posts/{post}/dislike', [LikeController::class, 'dislike']);
+});
+
+
+Route::get('/test-email', function () {
+    $user = User::first();
+
+    $liker = User::find(2);
+    $post = Post::first();
+
+    if (!$user || !$liker || !$post) {
+        return response()->json(['message' => 'User or Post not found'], 404);
+    }
+
+    $user->notify(new PostLikedNotification($liker, $post));
+
+    return response()->json(['message' => 'Test email sent']);
+});
+
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread', [NotificationController::class, 'unread']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
 });
 
 //Route::apiResource('users', UserController::class);

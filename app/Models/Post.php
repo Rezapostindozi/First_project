@@ -46,7 +46,10 @@ class Post extends Model
             ->exists();
     }
 
+    public function user(){
 
+        return $this->belongsTo(User::class);
+    }
 
 
 

@@ -5,114 +5,71 @@ namespace App\Http\Controllers\Api;
 use App\Enums\HttpStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
-use App\Models\Like;
+use App\Services\LikeService;
+use App\Services\RateLimiteService;
+use App\Services\PopularPostService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Http;
 
 class LikeController extends Controller
 {
+    protected LikeService $likeService;
+    protected RateLimiteService $rateLimitService;
+    protected PopularPostService $popularPostService;
 
-    public function like(Post $post): JsonResponse
-    {
-        $userId = auth('api')->id();
-
-        if (!$userId) {
-            return response()->json(['message' => 'User not authenticated'], Httpstatus::BAD_REQUEST->value);
-        }
-
-        $rateKey = "like-limit:{$userId}";
-        if (RateLimiter::tooManyAttempts($rateKey, 7)) {
-            $seconds = RateLimiter::availableIn($rateKey);
-            return response()->json([
-                'message' => "Rate limit exceeded. Try again in {$seconds} seconds."
-            ], Httpstatus::BAD_REQUEST->value);
-        }
-        RateLimiter::hit($rateKey, 60);
-
-        $like = Like::where('user_id', $userId)
-            ->where('post_id', $post->id)
-            ->first();
-
-        if ($like) {
-            if ($like->like_status === 'like') {
-                $like->delete();
-                Cache::tags(['posts', "post:{$post->id}"])->flush();
-                return response()->json(['message' => 'Like removed']);
-            } else {
-                $like->update(['like_status' => 'like']);
-                Cache::tags(['posts', "post:{$post->id}"])->flush();
-                return response()->json(['message' => 'Changed to like']);
-            }
-        }
-
-        Like::create([
-            'user_id' => $userId,
-            'post_id' => $post->id,
-            'like_status' => 'like',
-        ]);
-
-        Cache::tags(['posts', "post:{$post->id}"])->flush();
-
-        return response()->json(['message' => 'Post liked']);
+    public function __construct(
+        LikeService $likeService,
+        RateLimiteService $rateLimitService,
+        PopularPostService $popularPostService
+    ) {
+        $this->likeService = $likeService;
+        $this->rateLimitService = $rateLimitService;
+        $this->popularPostService = $popularPostService;
     }
 
-    public function dislike(Post $post): JsonResponse
+    public function like(Post $post)
     {
-        $userId = auth('api')->id();
+        $user = auth('api')->user();
 
-        if (!$userId) {
-            return response()->json(['message' => 'User not authenticated'], 403);
+        if (!$user) {
+            return response()->json(['message' => 'User not authenticated'], HttpStatus::OK->value);
         }
 
-        $rateKey = "like-limit:{$userId}";
-        if (RateLimiter::tooManyAttempts($rateKey, 7)) {
-            $seconds = RateLimiter::availableIn($rateKey);
+        $rateKey = "like-limit:{$user->id}";
+        $wait = $this->rateLimitService->checkRateLimit($rateKey);
+
+        if ($wait !== null) {
             return response()->json([
-                'message' => "Rate limit exceeded. Try again in {$seconds} seconds."
-            ], 429);
-        }
-        RateLimiter::hit($rateKey, 60);
-
-        $like = Like::where('user_id', $userId)
-            ->where('post_id', $post->id)
-            ->first();
-
-        if ($like) {
-            if ($like->like_status === 'dislike') {
-                $like->delete();
-                Cache::tags(['posts', "post:{$post->id}"])->flush();
-                return response()->json(['message' => 'Dislike removed']);
-            } else {
-                $like->update(['like_status' => 'dislike']);
-                Cache::tags(['posts', "post:{$post->id}"])->flush();
-                return response()->json(['message' => 'Changed to dislike']);
-            }
+                'message' => "Rate limit exceeded. Try again in {$wait} seconds."
+            ], HttpStatus::OK->value);
         }
 
-        Like::create([
-            'user_id' => $userId,
-            'post_id' => $post->id,
-            'like_status' => 'dislike',
-        ]);
-
-        Cache::tags(['posts', "post:{$post->id}"])->flush();
-
-        return response()->json(['message' => 'Post disliked']);
+        return $this->likeService->like($post , $user);
     }
 
-
-    public function popular(): JsonResponse
+    public function dislike(Post $post)
     {
-        $TTl = now()->addMinutes(10);
-        $popularPosts = Cache::tags(['posts'])->remember('popular_posts', $TTl, function () {
-            return Post::withCount(['likes' => function ($query) {
-                $query->where('like_status', 'like');
-            }])
-                ->orderByDesc('likes_count')
-                ->take(10)
-                ->get();
-        });
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not authenticated'], HttpStatus::NOT_FOUND->value);
+        }
+
+        $rateKey = "like-limit:{$user->id}";
+        $wait = $this->rateLimitService->checkRateLimit($rateKey);
+
+        if ($wait !== null) {
+            return response()->json([
+                'message' => "Rate limit exceeded. Try again in {$wait} seconds."
+            ], HttpStatus::FORBIDDEN->value);
+        }
+
+        return $this->likeService->dislike($post);
+    }
+
+    public function popular()
+    {
+        $popularPosts = $this->popularPostService->getPopularPosts();
 
         return response()->json($popularPosts);
     }
