@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class RateLimiteService{
 
-    public function checkRateLimit(string $key , int $maxAttempts = 5 , int $decaySeconds = 60 ){
+    public function checkRateLimit(string $key , int $maxAttempts = 5 , int $decaySeconds = 60 )
+        {
         if(RateLimiter::tooManyAttempts($key , $maxAttempts)){
-            $secound = RateLimiter::availableIn($key);
+            $second = RateLimiter::availableIn($key);
             return response()->json(["message" => "Too many attempts"], $decaySeconds );
         }
 

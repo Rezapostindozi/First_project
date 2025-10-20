@@ -8,8 +8,7 @@ use App\Models\Post;
 use App\Services\LikeService;
 use App\Services\RateLimiteService;
 use App\Services\PopularPostService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Http;
+
 
 class LikeController extends Controller
 {
@@ -18,10 +17,11 @@ class LikeController extends Controller
     protected PopularPostService $popularPostService;
 
     public function __construct(
-        LikeService $likeService,
-        RateLimiteService $rateLimitService,
+        LikeService        $likeService,
+        RateLimiteService  $rateLimitService,
         PopularPostService $popularPostService
-    ) {
+    )
+    {
         $this->likeService = $likeService;
         $this->rateLimitService = $rateLimitService;
         $this->popularPostService = $popularPostService;
@@ -44,10 +44,10 @@ class LikeController extends Controller
             ], HttpStatus::OK->value);
         }
 
-        return $this->likeService->like($post , $user);
+        return $this->likeService->like($post, $user);
     }
 
-    public function dislike(Post $post)
+    public function unlike(Post $post)
     {
         $user = auth('api')->user();
 
@@ -64,12 +64,12 @@ class LikeController extends Controller
             ], HttpStatus::FORBIDDEN->value);
         }
 
-        return $this->likeService->dislike($post);
+        return $this->likeService->unlike($post);
     }
 
     public function popular()
     {
-        $popularPosts = $this->popularPostService->getPopularPosts();
+        $popularPosts = $this->popularPostService->fetPopularPost();
 
         return response()->json($popularPosts);
     }

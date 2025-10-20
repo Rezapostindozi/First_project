@@ -3,16 +3,18 @@
 namespace App\Repositories;
 
 use App\Models\Post;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use mysql_xdevapi\Collection;
 
 class PostRepository
 {
     protected $table = 'posts';
 
 
-    public function paginate($perPage = 10  ,$page =1)
+    public function paginate($perPage = 10  ,$page =1): LengthAwarePaginator
     {
         $cacheKey = "posts.paginate.page_{$page}.perPage_{$perPage}";
         $TTL = 10 ;
@@ -23,7 +25,7 @@ class PostRepository
         });
     }
 
-    public function all()
+    public function all():Collection
     {
         $cacheKey = 'posts.all';
         $TTL = 10 ;
@@ -33,7 +35,7 @@ class PostRepository
         });
     }
 
-    public function find($id)
+    public function find($id): ?object
     {
         $cacheKey= "posts.{$id}";
         $TTL = 10 ;
@@ -44,22 +46,16 @@ class PostRepository
         });
     }
 
-    public function create(array $data)
+    public function create(array $data) : int
     {
         $data['user_id'] = 3;
         $id = DB::table($this->table)->insertGetId($data);
-
-        Cache::tags(["posts"])->flush();
-
-        $post = DB::table($this->table)->where("id", $id)->first();
-
-        Cache::tags(["posts" , "post_{$id}"])->put("post_{$id}", $post , now()->addMinutes(10));
 
         return $id;
     }
 
 
-    public function update( array $data , $id)
+    public function update( array $data , $id): int
     {
         $updated = DB::table($this->table)->where('id', $id)->update($data);
 
@@ -70,7 +66,7 @@ class PostRepository
         return $updated;
     }
 
-    public function delete($id)
+    public function delete($id): int
     {
        $deleted = DB::table($this->table)->where('id', $id)->delete();
        if($deleted){

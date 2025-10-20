@@ -7,75 +7,66 @@ use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\PostLikedNotification;
+use App\Repositories\LikeRepository;
 use Illuminate\Support\Facades\Cache;
 
 
-class LikeService{
+class LikeService
+{
+    protected $likeRepo;
 
-    public function like(Post $post , User $liker){
+    public function __construct(LikeRepository $likeRepo)
+    {
+        $this->likeRepo = $likeRepo;
+    }
+
+
+    public function like(Post $post , User $liker)
+    {
         $userId = auth('api')->id();
 
         if(!$userId){
-            return response()->json(["message" => "User not authenticated"], Httpstatus::OK->value);
+            return response()->json(["message" => "User not authenticated"], Httpstatus::FORBIDDEN->value);
         }
 
-        $like  = Like::where('user_id' , $userId)
-            ->where('post_id', $post->id)
-            ->first();
+        $like = $this->likeRepo->find($userId , $post->id);
 
-        if($like){
-            if($like->like_status === 'like'){
-                $like->delete();
-                Cache::tags(['posts',"post:{$post->id}"])->flush();
+        if($like) {
+            if ($like->like_status === 'like') {
+                $like->likeRepo->delete($like);
                 return response()->json(["message" => "Like removed"], Httpstatus::OK->value);
-            }
-            else{
-                $like->update(['like_status' => 'like']);
-                Cache::tags(['posts' , "post:{$post->id}"])->flush();
+            } else {
+                $like->likeRepo->update(['like_status' => 'like']);
                 return response()->json(["message" => "Liked"], Httpstatus::OK->value);
             }
         }
-        Like::create([
-            'user_id' => $userId,
-            'post_id' => $post->id,
-            'like_status' => 'like'
-        ]);
+        $this->likeRepo->create($userId , $post->id , 'like');
 
         $owner = $post->user;
         $owner->notify(new PostLikedNotification($liker , $post));
 
-        Cache::tags(['posts' ,"post:{$post->id}"])->flush();
         return response()->json(["message" => "Liked"], Httpstatus::OK->value);
     }
-    public function dislike(Post $post){
+    public function unlike(Post $post){
 
         $userId = auth('api')->id();
         if(!$userId){
             return response()->json(["message" => "User not authenticated"], Httpstatus::OK->value);
         }
-        $like = Like::where('user_id' , $userId)
-            ->where('post_id' , $post->id)
-            ->first();
+        $like = $this->likeRepo->find($userId , $post->id);
 
         if($like){
-            if($like->like_status === 'dislike'){
-                $like->delete();
-                Cache::tags(['posts', "post:{$post->id}"])->flush();
-                return response()->json(["message" => "Disliked"], Httpstatus::OK->value);
+            if($like->like_status === 'unlike'){
+                $like->likeRepo->delete($like);
+                return response()->json(["message" => "Unliked"], Httpstatus::OK->value);
             }
             else{
-                $like->update(['like_status' => 'dislike']);
-                Cache::tags(['post' , "post:{$post->id}"])->flush();
-                return response()->json(["message" => "Disliked"], Httpstatus::OK->value);
+                $like->likeRepo->update(['like_status' => 'unlike']);
+                return response()->json(["message" => "Unliked"], Httpstatus::OK->value);
             }
 
         }
-        Like::create([
-            'user_id' => $userId,
-            'post_id' => $post->id,
-            'like_status' => 'dislike'
-        ]);
-        Cache::tags(['post',"post:{$post->id}"])->flush();
-        return response()->json(["message" => "Disliked"], Httpstatus::OK->value);
+        $this->likeRepo->create($userId , $post->id , 'unlike');
+        return response()->json(["message" => "Unliked"], Httpstatus::OK->value);
     }
 }

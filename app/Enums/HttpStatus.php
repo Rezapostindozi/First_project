@@ -14,6 +14,10 @@ enum HttpStatus: int
     case UNAUTHORIZED  = 401;
     case FORBIDDEN  = 403;
     case NOT_FOUND  = 404;
+    case Method_Not_Allowed = 405;
+    case Unprocessable_Entity = 422;
+    case Too_many_Requests = 429;
     case MOVED_PERMANENTLY = 500;
-    case UNPROCESSABLE_ENTITY = 405;
+    case Bad_GateWay = 502;
+    case  Geteway_Timeout = 504;
 }

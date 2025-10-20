@@ -4,12 +4,13 @@ namespace App\Repositories;
 use App\Models\User;
 use App\Models\Register;
 use Illuminate\Support\Facades\Hash;
+use mysql_xdevapi\Collection;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 
 class AuthRepository
 {
-    public function register(array $data)
+    public function register(array $data): array
     {
         $user = User::create([
             'username' => $data['username'],
@@ -23,7 +24,7 @@ class AuthRepository
         return compact('user','token');
 
     }
-    public function login(array $data)
+    public function login(array $data):?array
     {
         if(!$token = Auth::guard('api')->attempt($data)){
             return null;
@@ -35,7 +36,7 @@ class AuthRepository
         return compact('user','token');
     }
 
-    public function logout()
+    public function logout():void
 
     {
         $token = JWTAuth::getToken();
@@ -43,7 +44,7 @@ class AuthRepository
         Register::where('token', $token)->delete();
     }
 
-    public function getActiveUser()
+    public function getActiveUser():Collection
     {
         return User::whereIn('id' , Register::pluck('user_id'))->get();
     }

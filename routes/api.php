@@ -49,7 +49,8 @@ Route::post('/logout', [AuthController::class, 'logout']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'like']);
-    Route::post('/posts/{post}/dislike', [LikeController::class, 'dislike']);
+    Route::post('/posts/{post}/unlike', [LikeController::class, 'unlike']);
+    Route::post('/posts/popular', [LikeController::class, 'popular']);
 });
 
 
