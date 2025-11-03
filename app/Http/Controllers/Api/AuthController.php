@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserRegistered;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
@@ -20,6 +21,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $result = $this->authService->register($request->validated());
+        event(new UserRegistered($result['user']));
         return response()->json([
             'message' => 'User successfully registered',
             'user' => $result['user'],

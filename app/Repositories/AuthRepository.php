@@ -31,7 +31,7 @@ class AuthRepository
         }
         $user = auth()->user();
 
-        Register::updateOrcreate(['user_id' => $user->id] , ['token' => $token]);
+        Register::updateOrCreate(['user_id' => $user->id] , ['token' => $token]);
 
         return compact('user','token');
     }
